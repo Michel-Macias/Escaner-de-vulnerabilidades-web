@@ -16,7 +16,24 @@ st.markdown("### Professional Security Testing Tool")
 
 # Sidebar Configuration
 st.sidebar.header("Configuration")
-target_url = st.sidebar.text_input("Target URL", "http://testphp.vulnweb.com")
+target_url = st.sidebar.text_input("Target URL", "http://localhost:8081")
+
+st.sidebar.subheader("Authentication (Optional)")
+enable_auth = st.sidebar.checkbox("Enable Login")
+if enable_auth:
+    login_url = st.sidebar.text_input("Login URL", "http://localhost:8081/login.php")
+    username = st.sidebar.text_input("Username", "admin")
+    password = st.sidebar.text_input("Password", "password", type="password")
+
+st.sidebar.subheader("Stealth Mode")
+use_stealth = st.sidebar.checkbox("Enable Stealth")
+delay = 0.0
+proxies = []
+if use_stealth:
+    delay = st.sidebar.slider("Request Delay (sec)", 0.0, 5.0, 1.0)
+    proxy_list = st.sidebar.text_area("Proxies (one per line)", "")
+    if proxy_list:
+        proxies = proxy_list.split("\n")
 
 st.sidebar.subheader("Scan Modules")
 use_sqli = st.sidebar.checkbox("SQL Injection", True)
@@ -24,6 +41,7 @@ use_xss = st.sidebar.checkbox("XSS (Cross-Site Scripting)", True)
 use_html = st.sidebar.checkbox("HTML Injection", True)
 use_cmd = st.sidebar.checkbox("Command Injection", True)
 use_ldap = st.sidebar.checkbox("LDAP Injection", False)
+use_headless = st.sidebar.checkbox("Headless DOM XSS (Slow)", False)
 
 if st.sidebar.button("Start Scan"):
     if not target_url:
@@ -33,17 +51,43 @@ if st.sidebar.button("Start Scan"):
         
         # Initialize Crawler
         crawler = Crawler(target_url)
+        # Apply Stealth
+        if use_stealth:
+            crawler.requester.delay = delay
+            crawler.requester.proxies = proxies
+        
+        # Handle Authentication
+        if enable_auth:
+            from src.core.auth import LoginManager
+            login_manager = LoginManager(crawler.requester)
+            status_text = st.empty()
+            status_text.text("Attempting login...")
+            if login_manager.login(login_url, username, password):
+                st.success("Login successful! Scanning as authenticated user.")
+                # TODO: Pass cookies to async session if needed
+            else:
+                st.error("Login failed! Continuing as anonymous...")
         
         # Progress Bar
         progress_bar = st.progress(0)
         status_text = st.empty()
         
         # Crawl
-        status_text.text("Crawling website...")
-        visited_urls, forms = crawler.run()
+        status_text.text("Crawling website (Async)...")
+        import asyncio
+        visited_urls, forms = asyncio.run(crawler.run())
         progress_bar.progress(30)
         
         st.success(f"Crawl finished. Found {len(visited_urls)} URLs and {len(forms)} forms.")
+        
+        all_results = []
+
+        # Fingerprinting
+        status_text.text("Fingerprinting target...")
+        from src.modules.fingerprint import Fingerprinter
+        fingerprinter = Fingerprinter(crawler.requester)
+        tech_findings = fingerprinter.scan(target_url)
+        all_results.extend(tech_findings)
         
         # Initialize Modules
         modules = []
@@ -53,7 +97,7 @@ if st.sidebar.button("Start Scan"):
         if use_cmd: modules.append(CommandInjection(crawler.requester))
         if use_ldap: modules.append(LDAPInjection(crawler.requester))
         
-        all_results = []
+        # Scan Forms
         
         # Scan Forms
         total_forms = len(forms)
@@ -71,6 +115,16 @@ if st.sidebar.button("Start Scan"):
         else:
             st.warning("No forms found to scan.")
             progress_bar.progress(100)
+
+        # Headless Scan
+        if use_headless:
+            status_text.text("Running Headless DOM XSS Scan...")
+            from src.core.headless import HeadlessScanner
+            headless = HeadlessScanner()
+            # Run headless scan on the target URL (and maybe discovered links)
+            # For demo, just the target
+            dom_vulns = asyncio.run(headless.scan_dom_xss(target_url))
+            all_results.extend(dom_vulns)
 
         status_text.text("Scan completed!")
         
