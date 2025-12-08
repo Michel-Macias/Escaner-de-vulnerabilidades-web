@@ -7,6 +7,8 @@
 ![Playwright](https://img.shields.io/badge/Playwright-Headless-green?style=for-the-badge&logo=playwright)
 ![AsyncIO](https://img.shields.io/badge/AsyncIO-High%20Performance-orange?style=for-the-badge)
 
+> **🔴 LIVE DEMO:** [scanner-vuln-web-maciasit.streamlit.app](https://scanner-vuln-web-maciasit.streamlit.app/)
+
 ## 📖 Introducción
 
 Este proyecto es un **Escáner de Vulnerabilidades Web** de nivel profesional, desarrollado con fines educativos y de auditoría ética. A diferencia de las herramientas automatizadas simples, este escáner ha sido construido modularmente para simular el comportamiento de un *pentester* real, combinando técnicas de rastreo (crawling), detección de tecnologías (fingerprinting) y explotación controlada.
