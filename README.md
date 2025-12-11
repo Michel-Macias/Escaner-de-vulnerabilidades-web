@@ -30,6 +30,7 @@ El objetivo no es solo encontrar fallos, sino **entender cómo funcionan**. Por 
 ### 📊 Dashboard & Reportes
 - **Interfaz Gráfica**: Control total desde un dashboard web creado con Streamlit.
 - **Reportes PDF**: Generación automática de informes ejecutivos con clasificación de riesgo (Alto, Medio, Bajo).
+- **Guía de Usuario Integrada**: Documentación completa accesible directamente desde la aplicación para facilitar su uso.
 
 ---
 
@@ -100,6 +101,8 @@ Ejecuta el siguiente comando en tu terminal:
 streamlit run app.py
 ```
 Se abrirá automáticamente una pestaña en tu navegador (`http://localhost:8501`).
+
+> **Tip**: Usa el menú de navegación en la barra lateral para alternar entre el **Escáner** y la **Guía de Usuario**.
 
 ### Configuración del Escaneo
 1.  **Target URL**: Introduce la URL completa (ej. `http://testphp.vulnweb.com` o `http://localhost:3000`).
