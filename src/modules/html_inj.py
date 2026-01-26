@@ -15,10 +15,8 @@ class HTMLInjection(BaseVulnerability):
             if input_field["type"] in ["submit", "button"]:
                 continue
             
-            data = {input_field["name"]: payload}
-            for other_input in inputs:
-                if other_input["name"] != input_field["name"]:
-                    data[other_input["name"]] = "test"
+            data = {inp["name"]: inp["value"] or "test" for inp in inputs if inp["name"]}
+            data[input_field["name"]] = payload
 
             if method == "post":
                 res = self.requester.post(target_url, data=data)

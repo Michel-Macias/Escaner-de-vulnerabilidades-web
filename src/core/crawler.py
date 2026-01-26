@@ -5,7 +5,7 @@ from src.core.extractor import FormExtractor
 from src.core.requester import RequestManager
 
 class Crawler:
-    def __init__(self, target_url, concurrency=10):
+    def __init__(self, target_url, concurrency=10, cookies=None):
         self.target_url = target_url
         self.domain = urlparse(target_url).netloc
         self.visited_urls = set()
@@ -14,6 +14,7 @@ class Crawler:
         self.extractor = FormExtractor()
         self.concurrency = concurrency
         self.session = None
+        self.cookies = cookies
 
     def is_valid_url(self, url):
         parsed = urlparse(url)
@@ -23,7 +24,7 @@ class Crawler:
         print(f"[*] Starting async crawl on {self.target_url}")
         self.visited_urls.add(self.target_url)
         
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(cookies=self.cookies) as session:
             self.session = session
             queue = asyncio.Queue()
             queue.put_nowait(self.target_url)

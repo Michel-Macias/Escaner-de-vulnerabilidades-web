@@ -128,5 +128,15 @@ Esta herramienta ha sido creada **exclusivamente para fines educativos y pruebas
 *   **NO** la utilices contra servidores de los que no tengas permiso explícito por escrito.
 *   El autor no se hace responsable del mal uso de este software.
 
+## 🛡️ Mejoras Recientes (Enero 2026)
+
+Se ha realizado una auditoría y actualización completa del motor:
+- **Actualización de Seguridad**: Dependencias actualizadas a sus versiones más recientes (`requests`, `playwright`, `aiohttp`, etc.).
+- **Detección Avanzada de SQLi**: Implementación de lógica **Boolean-based** para detectar vulnerabilidades que no devuelven errores visibles.
+- **Mejora en XSS**: Ampliación del diccionario de payloads y mejora en el motor de detección por reflexión.
+- **Soporte de Autenticación Robusto**: El escáner ahora detecta automáticamente tokens **CSRF** en los formularios de login y mantiene la sesión asíncrona correctamente.
+- **Fingerprinting Expandido**: Añadido soporte para detectar frameworks modernos como Laravel, Django, Flask y Express.
+- **Calidad de Código**: Introducción de tests automáticos con `pytest` y `pytest-asyncio`.
+
 ---
-© 2025 Web Vuln Scanner Project
+© 2026 Web Vuln Scanner Project

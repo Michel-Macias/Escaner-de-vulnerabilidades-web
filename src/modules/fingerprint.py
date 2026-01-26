@@ -10,7 +10,12 @@ class Fingerprinter:
             "Drupal": {"meta": {"name": "generator", "content": "Drupal"}},
             "Apache": {"header": "Server", "content": "Apache"},
             "Nginx": {"header": "Server", "content": "nginx"},
-            "PHP": {"header": "X-Powered-By", "content": "PHP"}
+            "PHP": {"header": "X-Powered-By", "content": "PHP"},
+            "Laravel": {"header": "X-Powered-By", "content": "Laravel"},
+            "Django": {"header": "Server", "content": "WSGIServer"},
+            "Express": {"header": "X-Powered-By", "content": "Express"},
+            "Flask": {"header": "Server", "content": "Werkzeug"},
+            "ASP.NET": {"header": "X-Powered-By", "content": "ASP.NET"}
         }
 
     def scan(self, url):

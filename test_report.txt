@@ -1,0 +1,17 @@
+Web Vulnerability Scan Report
+
+Date: 2025-12-11 21:08:21
+
+Found 2 vulnerabilities:
+
+1. SQL Injection
+URL: http://example.com/vuln
+Field:
+
+2. XSS
+URL: http://example.com/search
+Field:
+
+Page 1
+
+

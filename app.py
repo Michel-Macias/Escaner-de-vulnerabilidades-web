@@ -73,7 +73,8 @@ def show_scanner():
                 status_text.text("Attempting login...")
                 if login_manager.login(login_url, username, password):
                     st.success("Login successful! Scanning as authenticated user.")
-                    # TODO: Pass cookies to async session if needed
+                    # Pass cookies to async session
+                    crawler.cookies = crawler.requester.session.cookies.get_dict()
                 else:
                     st.error("Login failed! Continuing as anonymous...")
             
