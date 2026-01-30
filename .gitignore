@@ -16,3 +16,6 @@ env/
 *.pdf
 *.log
 .DS_Store
+
+# Security - OSINT Remediation
+.streamlit/secrets.toml
