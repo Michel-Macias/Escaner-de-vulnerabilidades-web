@@ -19,3 +19,8 @@ env/
 
 # Security - OSINT Remediation
 .streamlit/secrets.toml
+
+# Reportes generados (pueden contener datos sensibles de targets)
+scan_report.*
+*.report
+reports/
