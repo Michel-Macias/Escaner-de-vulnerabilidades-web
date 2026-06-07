@@ -1,3 +1,5 @@
+import logging
+
 from src.modules.base import BaseVulnerability
 import time
 

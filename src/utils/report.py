@@ -1,3 +1,4 @@
+import logging
 from fpdf import FPDF
 import datetime
 
