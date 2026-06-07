@@ -3,6 +3,7 @@ from src.core.extractor import FormExtractor
 from src.core.crawler import Crawler
 import asyncio
 
+
 def test_form_extractor():
     html = """
     <html>
@@ -16,13 +17,14 @@ def test_form_extractor():
     """
     extractor = FormExtractor()
     forms = extractor.extract_forms(html, "http://example.com")
-    
+
     assert len(forms) == 1
     assert forms[0]["action"] == "http://example.com/login"
     assert forms[0]["method"] == "post"
     assert len(forms[0]["inputs"]) == 2
     assert forms[0]["inputs"][0]["name"] == "username"
     assert forms[0]["inputs"][0]["value"] == "admin"
+
 
 def test_link_extractor():
     html = """
@@ -34,17 +36,17 @@ def test_link_extractor():
     """
     extractor = FormExtractor()
     links = extractor.extract_links(html, "http://example.com")
-    
+
     assert "http://example.com/page1" in links
     assert "http://example.com/page2" in links
     assert "http://google.com" in links
 
-@pytest.mark.asyncio
-async def test_crawler_basic():
-    # Note: Testing the crawler fully requires mocking aiohttp
-    # For now, we just test initialization and a simple check
-    crawler = Crawler("http://example.com")
+
+def test_crawler_limits_and_validation():
+    crawler = Crawler("http://example.com", max_urls=10, max_depth=1)
     assert crawler.target_url == "http://example.com"
     assert crawler.domain == "example.com"
     assert crawler.is_valid_url("http://example.com/test")
     assert not crawler.is_valid_url("http://google.com")
+    assert crawler.max_urls == 10
+    assert crawler.max_depth == 1

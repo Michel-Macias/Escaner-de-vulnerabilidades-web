@@ -1,21 +1,26 @@
 from src.modules.base import BaseVulnerability
 
+
 class LDAPInjection(BaseVulnerability):
+    def __init__(self, requester, *, sanitize_fn=None):
+        super().__init__(requester)
+        self.sanitize = sanitize_fn or (lambda s: s)
+
     def scan(self, form):
         results = []
         payloads = ["*", ")(cn=*))", "admin*)"]
-        errors = ["IPWorks ASP.NET LDAP", "Module LDAP", "LDAPException"]
+        errors = ["IPWorks ASP.NET LDAP", "Module LDAP", "LDAPException", "naming exception"]
 
-        target_url = form["action"]
+        target_url = self.sanitize(form["action"])
         method = form["method"]
         inputs = form["inputs"]
 
-        print(f"[*] Scanning for LDAP Injection in {target_url}")
+        logger.info("[*] Scanning LDAP Injection at %s", target_url)
 
         for input_field in inputs:
-            if input_field["type"] in ["submit", "button"]:
+            if input_field["type"] in ["submit", "button", "reset"]:
                 continue
-            
+
             for payload in payloads:
                 data = {inp["name"]: inp["value"] or "test" for inp in inputs if inp["name"]}
                 data[input_field["name"]] = payload
@@ -26,15 +31,19 @@ class LDAPInjection(BaseVulnerability):
                     res = self.requester.get(target_url, params=data)
 
                 if res:
-                    for error in errors:
-                        if error.lower() in res.text.lower():
+                    text = res.text.lower()
+                    for err in errors:
+                        if err.lower() in text:
                             results.append({
                                 "type": "LDAP Injection",
                                 "url": target_url,
                                 "payload": payload,
                                 "field": input_field["name"],
-                                "evidence": error
+                                "severity": "Medium",
+                                "evidence": err,
+                                "remediation": "Escapa caracteres especiales LDAP; usa binding directo en lugar de construir queries por concatenación.",
                             })
-                            print(f"[!] LDAP Injection Found! {target_url} parameter: {input_field['name']}")
+                            logger.warning("[!] LDAP Injection Found! %s -> %s", target_url, input_field["name"])
                             break
+
         return results

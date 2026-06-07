@@ -1,61 +1,86 @@
 from playwright.async_api import async_playwright
 import asyncio
 
+from src.core.extractor import FormExtractor
+from src.modules.xss import XSS
+
+logger = logging.getLogger(__name__)
+
+
 class HeadlessScanner:
-    async def scan_dom_xss(self, url):
+    async def scan_dom_xss(self, url, *, requester=None, max_inputs=20):
         """
-        Scans a URL for DOM-based XSS by fuzzing inputs.
-        Returns a list of findings.
+        Scans a URL for DOM-based XSS by fuzzing inputs with a Playwright Chromium.
         """
         findings = []
-        print(f"[*] Starting Headless Scan on {url}")
-        
+        extractor = FormExtractor()
+        logger.info("[*] Headless scan on %s", url)
+
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
                 page = await browser.new_page()
-                
+
                 # Intercept dialogs (alert/confirm/prompt)
                 page.on("dialog", lambda dialog: self._handle_dialog(dialog, url, findings))
-                
+
                 try:
                     await page.goto(url, wait_until="networkidle", timeout=10000)
                 except Exception:
-                    pass # Continue even if timeout
+                    pass
 
                 # 1. URL Fragment Test
                 payload = "<img src=x onerror=alert(1)>"
-                await page.goto(f"{url}#{payload}", wait_until="networkidle")
-                
+                try:
+                    await page.goto(f"{url}#{payload}", wait_until="networkidle")
+                except Exception:
+                    pass
+
                 # 2. Input Fuzzing
-                # Find all visible inputs
                 inputs = await page.locator("input:visible, textarea:visible").all()
-                print(f"[*] Found {len(inputs)} inputs to fuzz in headless mode.")
-                
-                for i, input_el in enumerate(inputs):
+                inputs = inputs[:max_inputs]
+                logger.info("[*] Headless fuzzing %s inputs", len(inputs))
+
+                for i, input_el in enumerate(inputs, 1):
                     try:
-                        # Clear and type payload
+                        tag_name = await input_el.evaluate("el => el.tagName")
+                        type_val = await input_el.evaluate("el => (el.type || '').toLowerCase()")
+                        if (tag_name == "INPUT" and type_val in ("submit", "button", "reset")) or (tag_name == "TEXTAREA" and type_val in ("hidden", "file")):
+                            continue
                         await input_el.fill(payload)
                         await input_el.press("Enter")
-                        # Wait a bit for JS to react
-                        await page.wait_for_timeout(500)
+                        try:
+                            await page.wait_for_timeout(300)
+                        except Exception:
+                            pass
                     except Exception as e:
-                        # print(f"[-] Error fuzzing input {i}: {e}")
-                        pass
+                        logger.debug("Headless error input %s: %s", i, e)
 
-                await browser.close()
-                
+                try:
+                    await browser.close()
+                except Exception:
+                    pass
         except Exception as e:
-            print(f"[-] Headless error: {e}")
-            
+            logger.error("Headless error: %s", e)
+
         return findings
 
-    def _handle_dialog(self, dialog, url, findings):
-        print(f"[!] DOM XSS Alert Triggered: {dialog.message}")
-        findings.append({
-            "type": "DOM XSS (Headless)",
-            "url": url,
-            "payload": "alert(1)",
-            "evidence": f"Dialog triggered: {dialog.message}"
-        })
-        asyncio.create_task(dialog.dismiss())
+    @staticmethod
+    def _handle_dialog(dialog, url, findings):
+        try:
+            findings.append({
+                "type": "DOM XSS (Headless)",
+                "url": url,
+                "payload": "alert(1)",
+                "field": "URL/Input",
+                "severity": "Medium",
+                "evidence": f"Dialog triggered: {dialog.message}",
+                "remediation": "Sanitiza datos antes de inyectarlos en sinks DOM (innerHTML, location, eval).",
+            })
+            logger.warning("[!] DOM XSS Alert Triggered: %s", dialog.message)
+        except Exception:
+            pass
+        try:
+            asyncio.get_running_loop().create_task(dialog.dismiss())
+        except RuntimeError:
+            pass

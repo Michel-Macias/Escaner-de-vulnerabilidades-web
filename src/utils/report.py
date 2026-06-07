@@ -1,6 +1,12 @@
 from fpdf import FPDF
 import datetime
 
+logger = logging.getLogger(__name__)
+try:
+    from fpdf.enums import XPos, YPos
+except Exception:
+    XPos = YPos = None
+
 class ReportGenerator(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
