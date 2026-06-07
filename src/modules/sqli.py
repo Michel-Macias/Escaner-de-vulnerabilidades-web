@@ -2,6 +2,8 @@ import logging
 
 from src.modules.base import BaseVulnerability
 
+logger = logging.getLogger(__name__)
+
 
 class SQLInjection(BaseVulnerability):
     def __init__(self, requester, *, sanitize_fn=None):
@@ -9,6 +11,8 @@ class SQLInjection(BaseVulnerability):
         self.sanitize = sanitize_fn or (lambda s: s)
 
     def _build_data(self, inputs, override=None):
+        if override is None:
+            override = {}
         return {
             inp["name"]: override.get(inp["name"], inp["value"] or "test")
             for inp in inputs

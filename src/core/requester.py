@@ -4,8 +4,6 @@ import time
 
 import requests
 
-from src.modules.cmd_inj import CommandInjection
-
 logger = logging.getLogger(__name__)
 
 

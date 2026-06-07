@@ -2,6 +2,8 @@ import logging
 
 from src.modules.base import BaseVulnerability
 
+logger = logging.getLogger(__name__)
+
 
 class XSS(BaseVulnerability):
     def __init__(self, requester, *, sanitize_fn=None):
