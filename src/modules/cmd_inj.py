@@ -7,7 +7,22 @@ logger = logging.getLogger(__name__)
 
 
 class CommandInjection(BaseVulnerability):
+    """
+    Módulo de escaneo para detectar vulnerabilidades de Inyección de Comandos del Sistema Operativo.
+    Soporta dos técnicas:
+      1. Basada en Eco: Comprueba si la salida de un comando inyectado ('echo') se refleja en la respuesta.
+      2. Basada en Tiempo: Comprueba si la ejecución de un comando de retardo ('sleep') dilata el tiempo de respuesta.
+    """
     def scan(self, form):
+        """
+        Ejecuta el escaneo de inyección de comandos en cada campo del formulario.
+        
+        Args:
+            form: Estructura de formulario a analizar.
+            
+        Returns:
+            list: Hallazgos de inyección de comandos encontrados.
+        """
         results = []
         target_url = form["action"]
         method = form["method"]
@@ -19,11 +34,14 @@ class CommandInjection(BaseVulnerability):
             if input_field["type"] in ["submit", "button", "reset"]:
                 continue
 
+            # Obtener tiempo de respuesta base para afinar el umbral en pruebas de tiempo (time-based)
             baseline_data = {inp["name"]: inp["value"] or "test" for inp in inputs if inp["name"]}
             base_res = self.requester.post(target_url, data=baseline_data) if method == "post" else self.requester.get(target_url, params=baseline_data)
             base_time = base_res.elapsed.total_seconds() if base_res and getattr(base_res, "elapsed", None) else 0.5
+            # Umbral seguro para el sleep: doble del tiempo base o mínimo 2.5 segundos
             threshold = max(float(base_time) * 2, 2.5)
 
+            # 1. Pruebas basadas en Echo (Reflexión directa del comando)
             echo_payloads = [
                 "; echo CMD_INJ_TEST",
                 "| echo CMD_INJ_TEST",
@@ -38,6 +56,7 @@ class CommandInjection(BaseVulnerability):
                 data[input_field["name"]] = payload
 
                 res = self.requester.post(target_url, data=data) if method == "post" else self.requester.get(target_url, params=data)
+                # Si se detecta la palabra clave CMD_INJ_TEST, el comando inyectado se ejecutó con éxito
                 if res and "CMD_INJ_TEST" in res.text:
                     results.append({
                         "type": "Command Injection (Echo-based)",
@@ -53,6 +72,7 @@ class CommandInjection(BaseVulnerability):
                     checked_echo = True
                     break
 
+            # 2. Pruebas basadas en Tiempo (Si la inyección no es ciega pero no retorna salida)
             if not echo_matched:
                 checked_echo = True
                 sleep_payloads = ["; sleep 5", "| sleep 5", "& sleep 5"]
@@ -67,6 +87,7 @@ class CommandInjection(BaseVulnerability):
                         self.requester.get(target_url, params=data)
 
                     duration = time.time() - start_time
+                    # Si el tiempo de respuesta supera el umbral esperado (por el sleep 5), es vulnerable
                     if duration >= threshold:
                         results.append({
                             "type": "Command Injection (Time-based)",
